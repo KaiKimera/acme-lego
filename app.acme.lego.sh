@@ -1,7 +1,8 @@
 #!/usr/bin/env -S bash -eu
 # -------------------------------------------------------------------------------------------------------------------- #
 # ACME: CERTIFICATE
-#
+# Script for generating a certificate using Lego.
+# -------------------------------------------------------------------------------------------------------------------- #
 # @package    Bash
 # @author     Yuri Dunaev
 # @license    MIT
@@ -15,7 +16,9 @@
 SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd -P )"; readonly SRC_DIR # Script directory.
 SRC_NAME="$(basename "$(readlink -f "${BASH_SOURCE[0]}")")"; readonly SRC_NAME # Script name.
 SRC_DOMAIN="${1:?}"; readonly SRC_DOMAIN # Domain name.
+# shellcheck source=/dev/null
 . "${SRC_DIR}/${SRC_NAME%.*}.conf" # Loading main configuration file.
+# shellcheck source=/dev/null
 . "${SRC_DIR}/${SRC_NAME%.*}.${SRC_DOMAIN}.conf" # Loading domain configuration file.
 
 # Environment variables.
@@ -27,6 +30,7 @@ export LEGO_PFX_FORMAT="${ACME_PFX_FORMAT:?}"
 ACME_COMMAND="${2:?}"; readonly ACME_COMMAND
 ACME_EMAIL="${ACME_EMAIL:?}"; readonly ACME_EMAIL
 ACME_CERT_PATH="${ACME_CERT_PATH:?}"; readonly ACME_CERT_PATH
+ACME_PORT="${ACME_PORT:?}"; readonly ACME_PORT
 ACME_WEB_ROOT="${ACME_WEB_ROOT:?}"; readonly ACME_WEB_ROOT
 ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
 ACME_TYPE="${ACME_TYPE:?}"; readonly ACME_TYPE
@@ -40,22 +44,30 @@ ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
 run() { lego "${ACME_COMMAND}"; }
 
 # -------------------------------------------------------------------------------------------------------------------- #
-# ACME
+# LEGO
+# Let's Encrypt client and ACME library written in Go.
 # -------------------------------------------------------------------------------------------------------------------- #
 
 lego() {
-  local options; options=("--key-type ${ACME_KEY_TYPE}" "--email ${ACME_EMAIL}" '--pem' '--pfx')
+  local options; options=('--accept-tos' '--key-type' "${ACME_KEY_TYPE}" '--email' "${ACME_EMAIL}" '--pem' '--pfx')
   local command; command="${1}"
 
   case "${ACME_TYPE}" in
-    'http') options+=('--http'); [[ -n "${ACME_WEB_ROOT}" ]] && options+=("--http.webroot ${ACME_WEB_ROOT}") ;;
-    'dns') options+=("--dns ${ACME_DNS}") ;;
-    *) echo 'TYPE is not supported!' && exit 1 ;;
+    'http')
+      options+=('--http')
+      [[ -n "${ACME_WEB_ROOT}" ]] && options+=('--http.port' "${ACME_PORT}" '--http.webroot' "${ACME_WEB_ROOT}")
+      ;;
+    'dns')
+      options+=('--dns' "${ACME_DNS}")
+      ;;
+    *)
+      echo 'TYPE is not supported!'; exit 1
+      ;;
   esac
 
-  for i in "${ACME_DOMAINS[@]}"; do options+=("--domains ${i}"); done
+  for i in "${ACME_DOMAINS[@]}"; do options+=('--domains' "${i}"); done
 
-  if "${SRC_DIR}/lego" ${options[*]} "${command}"; then
+  if "${SRC_DIR}/lego" "${options[@]}" "${command}"; then
     local paths; paths=("${LEGO_CERT_PATH}" "${LEGO_CERT_KEY_PATH}" "${LEGO_CERT_PEM_PATH}" "${LEGO_CERT_PFX_PATH}")
     [[ ! -d "${ACME_CERT_PATH}" ]] && mkdir -p "${ACME_CERT_PATH}"
     for f in "${paths[@]}"; do cp "${f}" "${ACME_CERT_PATH}"; done
