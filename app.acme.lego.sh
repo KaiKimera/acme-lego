@@ -10,7 +10,7 @@
 # @link       https://fdn.im
 # -------------------------------------------------------------------------------------------------------------------- #
 
-# (( EUID != 0 )) && { echo >&2 'This script should be run as root!'; exit 1; }
+(( EUID != 0 )) && { echo >&2 'This script should be run as root!'; exit 1; }
 
 # Sources.
 SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd -P )"; readonly SRC_DIR # Script directory.
@@ -36,6 +36,7 @@ ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
 ACME_TYPE="${ACME_TYPE:?}"; readonly ACME_TYPE
 ACME_DNS="${ACME_DNS:?}"; readonly ACME_DNS
 ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
+ACME_LOG="${ACME_LOG:?}"; readonly ACME_LOG
 
 # -------------------------------------------------------------------------------------------------------------------- #
 # INITIALIZATION
