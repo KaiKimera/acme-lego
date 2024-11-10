@@ -47,17 +47,17 @@ lego() {
   local options; options=("--key-type ${ACME_KEY_TYPE}" "--email ${ACME_EMAIL}" '--pem' '--pfx')
   local command; command="${1}"
 
-  if [[ "${ACME_TYPE}" == "http" ]]; then
-    options+=('--http')
-    [[ -n "${ACME_WEB_ROOT}" ]] && options+=("--http.webroot ${ACME_WEB_ROOT}")
-  else
-    options+=("--dns ${ACME_DNS}")
-  fi
+  case "${ACME_TYPE}" in
+    'http') options+=('--http'); [[ -n "${ACME_WEB_ROOT}" ]] && options+=("--http.webroot ${ACME_WEB_ROOT}") ;;
+    'dns') options+=("--dns ${ACME_DNS}") ;;
+    *) echo 'TYPE is not supported!' && exit 1 ;;
+  esac
 
   for i in "${ACME_DOMAINS[@]}"; do options+=("--domains ${i}"); done
 
   if "${SRC_DIR}/lego" ${options[*]} "${command}"; then
     local paths; paths=("${LEGO_CERT_PATH}" "${LEGO_CERT_KEY_PATH}" "${LEGO_CERT_PEM_PATH}" "${LEGO_CERT_PFX_PATH}")
+    [[ ! -d "${ACME_CERT_PATH}" ]] && mkdir -p "${ACME_CERT_PATH}"
     for f in "${paths[@]}"; do cp "${f}" "${ACME_CERT_PATH}"; done
     for s in "${ACME_SERVICES[@]}"; do _service "${s}" && systemctl reload "${s}"; done
   fi
