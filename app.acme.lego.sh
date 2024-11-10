@@ -24,10 +24,11 @@ export LEGO_PFX_PASSWORD="${ACME_PFX_PASSWORD:?}"
 export LEGO_PFX_FORMAT="${ACME_PFX_FORMAT:?}"
 
 # Parameters.
-ACME_ACTION="${2:?}"; readonly ACME_ACTION
+ACME_COMMAND="${2:?}"; readonly ACME_COMMAND
 ACME_EMAIL="${ACME_EMAIL:?}"; readonly ACME_EMAIL
-ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
+ACME_CERT_PATH="${ACME_CERT_PATH:?}"; readonly ACME_CERT_PATH
 ACME_WEB_ROOT="${ACME_WEB_ROOT:?}"; readonly ACME_WEB_ROOT
+ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
 ACME_TYPE="${ACME_TYPE:?}"; readonly ACME_TYPE
 ACME_DNS="${ACME_DNS:?}"; readonly ACME_DNS
 ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
@@ -36,34 +37,29 @@ ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
 # INITIALIZATION
 # -------------------------------------------------------------------------------------------------------------------- #
 
-run() { lego "${ACME_ACTION}"; }
+run() { lego "${ACME_COMMAND}"; }
 
 # -------------------------------------------------------------------------------------------------------------------- #
 # ACME
 # -------------------------------------------------------------------------------------------------------------------- #
 
 lego() {
-  local params; params=("--key-type ${ACME_KEY_TYPE}" "--email ${ACME_EMAIL}" '--pem' '--pfx')
-  local action; action="${1}"
+  local options; options=("--key-type ${ACME_KEY_TYPE}" "--email ${ACME_EMAIL}" '--pem' '--pfx')
+  local command; command="${1}"
 
   if [[ "${ACME_TYPE}" == "http" ]]; then
-    params+=('--http')
-    [[ -n "${ACME_WEB_ROOT}" ]] && params+=("--http.webroot ${ACME_WEB_ROOT}")
+    options+=('--http')
+    [[ -n "${ACME_WEB_ROOT}" ]] && options+=("--http.webroot ${ACME_WEB_ROOT}")
   else
-    params+=("--dns ${ACME_DNS}")
+    options+=("--dns ${ACME_DNS}")
   fi
 
-  for i in "${ACME_DOMAINS[@]}"; do params+=("--domains ${i}"); done
+  for i in "${ACME_DOMAINS[@]}"; do options+=("--domains ${i}"); done
 
-  local cert_path
-  cert_path=("${LEGO_CERT_PATH}" "${LEGO_CERT_KEY_PATH}" "${LEGO_CERT_PEM_PATH}" "${LEGO_CERT_PFX_PATH}")
-
-  if "${SRC_DIR}/lego" ${params[*]} "${action}"; then
-    if mv "${cert_path[@]}" "${ACME_PATH}"; then
-      for i in "${ACME_SERVICES[@]}"; do
-        _service "${i}" && systemctl reload "${i}"
-      done
-    fi
+  if "${SRC_DIR}/lego" ${options[*]} "${command}"; then
+    local paths; paths=("${LEGO_CERT_PATH}" "${LEGO_CERT_KEY_PATH}" "${LEGO_CERT_PEM_PATH}" "${LEGO_CERT_PFX_PATH}")
+    for f in "${paths[@]}"; do cp "${f}" "${ACME_CERT_PATH}"; done
+    for s in "${ACME_SERVICES[@]}"; do _service "${s}" && systemctl reload "${s}"; done
   fi
 }
 
