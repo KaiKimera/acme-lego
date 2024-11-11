@@ -54,10 +54,16 @@ run() { lego "${ACME_COMMAND}"; }
 # -------------------------------------------------------------------------------------------------------------------- #
 
 lego() {
-  local options; options=('--accept-tos' '--key-type' "${ACME_KEY_TYPE}" '--email' "${ACME_EMAIL}" '--pem' '--pfx')
   local command; command="${1}"
-
-  [[ -n "${ACME_CRT_TIMEOUT}" ]] && options+=('--cert.timeout' "${ACME_CRT_TIMEOUT}")
+  local options
+  options=(
+    '--accept-tos'
+    '--key-type' "${ACME_KEY_TYPE}"
+    '--email' "${ACME_EMAIL}"
+    '--cert.timeout' "${ACME_CRT_TIMEOUT}"
+    '--pem'
+    '--pfx'
+  )
 
   case "${ACME_METHOD}" in
     'dns')
