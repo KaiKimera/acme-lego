@@ -29,13 +29,18 @@ export LEGO_PFX_FORMAT="${ACME_PFX_FORMAT:?}"
 
 # Parameters.
 ACME_COMMAND="${2:?}"; readonly ACME_COMMAND
+
 ACME_EMAIL="${ACME_EMAIL:?}"; readonly ACME_EMAIL
 ACME_PATH="${ACME_PATH:?}"; readonly ACME_PATH
-ACME_PORT="${ACME_PORT:?}"; readonly ACME_PORT
-ACME_WEB_ROOT="${ACME_WEB_ROOT:?}"; readonly ACME_WEB_ROOT
+ACME_CSR="${ACME_CSR:?}"; readonly ACME_CSR
 ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
-ACME_TYPE="${ACME_TYPE:?}"; readonly ACME_TYPE
+ACME_METHOD="${ACME_METHOD:?}"; readonly ACME_METHOD
+ACME_HTTP_PORT="${ACME_HTTP_PORT:?}"; readonly ACME_HTTP_PORT
+ACME_HTTP_WEBROOT="${ACME_HTTP_WEBROOT:?}"; readonly ACME_HTTP_WEBROOT
+ACME_TLS_PORT="${ACME_TLS_PORT:?}"; readonly ACME_TLS_PORT
 ACME_DNS="${ACME_DNS:?}"; readonly ACME_DNS
+ACME_CRT_TIMEOUT="${ACME_CRT_TIMEOUT:?}"; readonly ACME_CRT_TIMEOUT
+
 ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -53,13 +58,19 @@ lego() {
   local options; options=('--accept-tos' '--key-type' "${ACME_KEY_TYPE}" '--email' "${ACME_EMAIL}" '--pem' '--pfx')
   local command; command="${1}"
 
-  case "${ACME_TYPE}" in
-    'http')
-      options+=('--http' '--http.port' "${ACME_PORT}")
-      [[ -n "${ACME_WEB_ROOT}" ]] && options+=('--http.webroot' "${ACME_WEB_ROOT}")
-      ;;
+  [[ -n "${ACME_CSR}" ]] && options+=('--csr' "${ACME_CSR}")
+  [[ -n "${ACME_CRT_TIMEOUT}" ]] && options+=('--cert.timeout' "${ACME_CRT_TIMEOUT}")
+
+  case "${ACME_METHOD}" in
     'dns')
       options+=('--dns' "${ACME_DNS}")
+      ;;
+    'http')
+      options+=('--http' '--http.port' "${ACME_HTTP_PORT}")
+      [[ -n "${ACME_HTTP_WEBROOT}" ]] && options+=('--http.webroot' "${ACME_HTTP_WEBROOT}")
+      ;;
+    'tls')
+      options+=('--tls' '--tls.port' "${ACME_TLS_PORT}")
       ;;
     *)
       echo 'TYPE is not supported!'; exit 1
