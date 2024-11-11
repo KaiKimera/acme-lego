@@ -31,15 +31,15 @@ export LEGO_PFX_FORMAT="${ACME_PFX_FORMAT:?}"
 ACME_COMMAND="${2:?}"; readonly ACME_COMMAND
 ACME_EMAIL="${ACME_EMAIL:?}"; readonly ACME_EMAIL
 ACME_PATH="${ACME_PATH:?}"; readonly ACME_PATH
+ACME_METHOD="${ACME_METHOD:?}"; readonly ACME_METHOD
+ACME_HTTP_PORT="${ACME_HTTP_PORT:?}"; readonly ACME_HTTP_PORT
+ACME_HTTP_PROXY_HEADER="${ACME_HTTP_PROXY_HEADER:?}"; readonly ACME_HTTP_PROXY_HEADER
+ACME_HTTP_WEBROOT="${ACME_HTTP_WEBROOT?}"; readonly ACME_HTTP_WEBROOT
+ACME_TLS_PORT="${ACME_TLS_PORT:?}"; readonly ACME_TLS_PORT
 ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
 ACME_CRT_TIMEOUT="${ACME_CRT_TIMEOUT:?}"; readonly ACME_CRT_TIMEOUT
 ACME_SERVICES=("${ACME_SERVICES[@]:?}"); readonly ACME_SERVICES
 ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
-ACME_METHOD="${ACME_METHOD:?}"; readonly ACME_METHOD
-ACME_HTTP_PORT="${ACME_HTTP_PORT:?}"; readonly ACME_HTTP_PORT
-ACME_HTTP_PROXY_HEADER="${ACME_HTTP_PROXY_HEADER:?}"; readonly ACME_HTTP_PROXY_HEADER
-ACME_HTTP_WEBROOT="${ACME_HTTP_WEBROOT:?}"; readonly ACME_HTTP_WEBROOT
-ACME_TLS_PORT="${ACME_TLS_PORT:?}"; readonly ACME_TLS_PORT
 ACME_DNS="${ACME_DNS:?}"; readonly ACME_DNS
 
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -64,14 +64,11 @@ lego() {
       options+=('--dns' "${ACME_DNS}")
       ;;
     'http')
-      options+=('--http')
-      [[ -n "${ACME_HTTP_PORT}" ]] && options+=('--http.port' "${ACME_HTTP_PORT}")
-      [[ -n "${ACME_HTTP_PROXY_HEADER}" ]] && options+=('--http.proxy-header' "${ACME_HTTP_PROXY_HEADER}")
+      options+=('--http' '--http.port' "${ACME_HTTP_PORT}" '--http.proxy-header' "${ACME_HTTP_PROXY_HEADER}")
       [[ -n "${ACME_HTTP_WEBROOT}" ]] && options+=('--http.webroot' "${ACME_HTTP_WEBROOT}")
       ;;
     'tls')
-      options+=('--tls')
-      [[ -n "${ACME_TLS_PORT}" ]] && options+=('--tls.port' "${ACME_TLS_PORT}")
+      options+=('--tls' '--tls.port' "${ACME_TLS_PORT}")
       ;;
     *)
       echo 'TYPE is not supported!'; exit 1
