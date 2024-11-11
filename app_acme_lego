@@ -2,4 +2,4 @@ SHELL=/bin/bash
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 HOME=/root
 
-0 0 * * * root ${HOME}/apps/acme/app.acme.lego.sh 'example.com' 'renew' >/dev/null 2>&1
+0 0 * * * root "${HOME}/apps/acme/app.acme.lego.sh" 'example.com' 'renew' >/dev/null 2>&1
