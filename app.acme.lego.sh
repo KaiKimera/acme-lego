@@ -22,6 +22,7 @@ SRC_DOMAIN="${1:?}"; readonly SRC_DOMAIN # Domain name.
 . "${SRC_DIR}/${SRC_NAME%.*}.${SRC_DOMAIN}.conf" # Loading domain configuration file.
 
 # Environment variables.
+export LEGO_PATH="${SRC_DIR:?}"
 export LEGO_SERVER="${ACME_SERVER:?}"
 export LEGO_PFX_PASSWORD="${ACME_PFX_PASSWORD:?}"
 export LEGO_PFX_FORMAT="${ACME_PFX_FORMAT:?}"
@@ -29,14 +30,13 @@ export LEGO_PFX_FORMAT="${ACME_PFX_FORMAT:?}"
 # Parameters.
 ACME_COMMAND="${2:?}"; readonly ACME_COMMAND
 ACME_EMAIL="${ACME_EMAIL:?}"; readonly ACME_EMAIL
-ACME_CERT_PATH="${ACME_CERT_PATH:?}"; readonly ACME_CERT_PATH
+ACME_PATH="${ACME_PATH:?}"; readonly ACME_PATH
 ACME_PORT="${ACME_PORT:?}"; readonly ACME_PORT
 ACME_WEB_ROOT="${ACME_WEB_ROOT:?}"; readonly ACME_WEB_ROOT
 ACME_KEY_TYPE="${ACME_KEY_TYPE:?}"; readonly ACME_KEY_TYPE
 ACME_TYPE="${ACME_TYPE:?}"; readonly ACME_TYPE
 ACME_DNS="${ACME_DNS:?}"; readonly ACME_DNS
 ACME_DOMAINS=("${ACME_DOMAINS[@]:?}"); readonly ACME_DOMAINS
-ACME_LOG="${ACME_LOG:?}"; readonly ACME_LOG
 
 # -------------------------------------------------------------------------------------------------------------------- #
 # INITIALIZATION
@@ -55,8 +55,8 @@ lego() {
 
   case "${ACME_TYPE}" in
     'http')
-      options+=('--http')
-      [[ -n "${ACME_WEB_ROOT}" ]] && options+=('--http.port' "${ACME_PORT}" '--http.webroot' "${ACME_WEB_ROOT}")
+      options+=('--http' '--http.port' "${ACME_PORT}")
+      [[ -n "${ACME_WEB_ROOT}" ]] && options+=('--http.webroot' "${ACME_WEB_ROOT}")
       ;;
     'dns')
       options+=('--dns' "${ACME_DNS}")
@@ -69,9 +69,9 @@ lego() {
   for i in "${ACME_DOMAINS[@]}"; do options+=('--domains' "${i}"); done
 
   if "${SRC_DIR}/lego" "${options[@]}" "${command}"; then
-    local paths; paths=("${LEGO_CERT_PATH}" "${LEGO_CERT_KEY_PATH}" "${LEGO_CERT_PEM_PATH}" "${LEGO_CERT_PFX_PATH}")
-    [[ ! -d "${ACME_CERT_PATH}" ]] && mkdir -p "${ACME_CERT_PATH}"
-    for f in "${paths[@]}"; do cp "${f}" "${ACME_CERT_PATH}"; done
+    [[ ! -d "${ACME_PATH}" ]] && mkdir -p "${ACME_PATH}"
+    cp -f "${LEGO_PATH}/certificates/"{*.crt,*.key,*.pem,*.pfx} "${ACME_PATH}" \
+      && chmod 644 "${ACME_PATH}/"{*.crt,*.key,*.pem,*.pfx}
     for s in "${ACME_SERVICES[@]}"; do _service "${s}" && systemctl reload "${s}"; done
   fi
 }
@@ -80,6 +80,7 @@ lego() {
 # ------------------------------------------------< COMMON FUNCTIONS >------------------------------------------------ #
 # -------------------------------------------------------------------------------------------------------------------- #
 
+# Checking service availability.
 _service() {
   local s; s="${1}"
   { systemctl list-units --full -all | grep -Fq "${s}"; } && return 0
